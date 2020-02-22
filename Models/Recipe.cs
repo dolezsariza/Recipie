@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Recipie.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -19,5 +20,12 @@ namespace Recipie.Domain.Models
         public int Sugar { get; set; }
         public int Protein { get; set; }
         public int Salt { get; set; }
+        public List<RecipeIngredient> RecipeIngredients { get; set; }
+
+        public Recipe(string name, string description)
+        {
+            Name = name;
+            Description = description;
+        }
     }
 }
