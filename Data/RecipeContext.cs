@@ -10,13 +10,16 @@ namespace Recipie.Data
 {
     public class RecipeContext : DbContext
     {
+        public RecipeContext(DbContextOptions<RecipeContext> options)
+            : base(options) { }
+
         public DbSet<Recipe> Recipes { get; set; }
         public DbSet<Ingredient> Ingredients { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseSqlServer("Server = (localdb)\\mssqllocaldb; " +
-                "Database=RecipeAppData; Trusted_Connection=True");
-        }
+        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        //{
+        //    optionsBuilder.UseSqlServer("Server = (localdb)\\mssqllocaldb; " +
+        //        "Database=RecipeAppData; Trusted_Connection=True");
+        //}
     }
 }
