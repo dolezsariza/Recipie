@@ -51,38 +51,17 @@ namespace Recipie.Controllers
         [HttpGet("{id}/ingredients")]
         public async Task<ActionResult> GetIngredientsOfRecipe(int id)
         {
-            var recipe = await _context.Recipes.FindAsync(id);
-
-            if (recipe == null)
-            {
-                return NotFound();
-            }
-
             var ingredientIds = await _context.RecipeIngredients.Where(ri => ri.RecipeId == id).Select(ri => ri.IngredientId).ToListAsync();
             var ingredients = new List<Ingredient>();
 
             foreach (var ing in _context.Ingredients)
             {
-                if (ingredients.Contains(ing.ID)){
+                if (ingredientIds.Contains(ing.ID)){
                     ingredients.Add(ing);
                 }
             }
 
             return Ok(ingredients);
-        }
-
-        [HttpGet("recipeingredients")]
-        public async Task<ActionResult> GetAllRecipeIngredients()
-        {
-            var recipeIngredients = await _context.RecipeIngredients.ToListAsync();
-            return Ok(recipeIngredients);
-        }
-
-        [HttpGet("{id}/recipeingredients")]
-        public async Task<ActionResult> GetRecipeIngredientsOfRecipe(int id)
-        {
-            var recipeIngredients = await _context.RecipeIngredients.Where(ri => ri.RecipeId == id).ToListAsync();
-            return Ok(recipeIngredients);
         }
 
         [HttpPut("{id}")]
