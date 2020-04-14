@@ -52,13 +52,15 @@ namespace Recipie.Controllers
         public async Task<ActionResult> GetIngredientsOfRecipe(int id)
         {
             var ingredientIds = await _context.RecipeIngredients.Where(ri => ri.RecipeId == id).Select(ri => ri.IngredientId).ToListAsync();
-            var ingredients = new List<Ingredient>();
-
-            foreach (var ing in _context.Ingredients)
+            if (ingredientIds == null)
             {
-                if (ingredientIds.Contains(ing.ID)){
-                    ingredients.Add(ing);
-                }
+                return NotFound();
+            }
+            
+            var ingredients = await _context.Ingredients.Where(i => ingredientIds.Contains(i.ID)).ToListAsync();
+            if (ingredients == null)
+            {
+                return NotFound();
             }
 
             return Ok(ingredients);
