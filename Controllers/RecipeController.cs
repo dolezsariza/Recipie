@@ -100,8 +100,6 @@ namespace Recipie.Controllers
         public async Task<ActionResult<Recipe>> AddRecipe([FromBody] RecipePostRequest recipeInfo)
         {
             var recipe = new Recipe(recipeInfo.Name, recipeInfo.Description);
-            recipe.Name = recipeInfo.Name;
-            recipe.Description = recipeInfo.Description;
         
             _context.Recipes.Add(recipe);
 
