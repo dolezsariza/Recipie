@@ -14,6 +14,8 @@ namespace Recipie.Domain.Models
         public int ID { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        [ForeignKey(nameof(User))]
+        public string OwnerId { get; set; }
         [NotMappedAttribute]
         public List<Ingredient> Ingredients { get; set; }
         public int Energy { get; set; }
@@ -23,11 +25,13 @@ namespace Recipie.Domain.Models
         public int Protein { get; set; }
         public int Salt { get; set; }
         public List<RecipeIngredient> RecipeIngredients { get; set; }
+        public DateTime Date { get; set; }
 
-        public Recipe(string name, string description)
+        public Recipe(string name, string description, string ownerId)
         {
             Name = name;
             Description = description;
+            OwnerId = ownerId;
         }
     }
 }
