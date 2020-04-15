@@ -22,7 +22,7 @@ namespace Recipie.Controllers
             _context = context;
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpGet("{userName}")]
         public async Task<IActionResult> GetProfile(string userName)
         {
@@ -44,9 +44,9 @@ namespace Recipie.Controllers
             }
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpPut("{userName}")]
-        public async Task<IActionResult> UpdateProfile(string userName, [FromBody]User user)
+        public async Task<IActionResult> UpdateProfile(string userName, [FromBody]Profile profile)
         {
             if (!UserAuthentication(userName))
             {
@@ -56,9 +56,9 @@ namespace Recipie.Controllers
             {
                 var nuser = await _context.Users.SingleOrDefaultAsync(user => user.UserName == userName);
 
-                nuser.FirstName = user.FirstName;
-                nuser.LastName = user.LastName;
-                nuser.Introduction = user.Introduction;
+                nuser.FirstName = profile.FirstName;
+                nuser.LastName = profile.LastName;
+                nuser.Introduction = profile.Introduction;
                 await _context.SaveChangesAsync();
                 return Ok();
             }
@@ -70,7 +70,7 @@ namespace Recipie.Controllers
 
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpDelete("{userName}")]
         public async Task<IActionResult> DeleteProfile(string userName)
         {
@@ -102,7 +102,7 @@ namespace Recipie.Controllers
             }
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpGet("{userName}/recipes")]
         public async Task<IActionResult> ListUsersRecipes(string userName)
         {
