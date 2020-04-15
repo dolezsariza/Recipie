@@ -38,7 +38,15 @@ namespace Recipie
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
             });
-            services.AddIdentity<User, IdentityRole>().AddEntityFrameworkStores<RecipeContext>();
+
+            services.AddIdentity<User, IdentityRole>(opt =>
+            {
+                opt.Password.RequiredLength = 6;
+                opt.Password.RequireDigit = true;
+                opt.Password.RequireNonAlphanumeric = false;
+                opt.Password.RequireUppercase = true;
+            })
+                .AddEntityFrameworkStores<RecipeContext>().AddDefaultTokenProviders();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
