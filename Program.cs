@@ -45,24 +45,5 @@ namespace Recipie
                 {
                     webBuilder.UseStartup<Startup>();
                 });
-
-        public static void InsertData(IServiceProvider serviceProvider)
-        {
-            Recipe recipe1 = new Recipe("Spagetti","Olasz tésztaétel");
-            Recipe recipe2 = new Recipe("Rántott hús", "Hús beforgatva panírba, kisütve");
-            Ingredient ingredient1 = new Ingredient("Paradicsom", "piros bogyótermésû növény");
-            Ingredient ingredient2 = new Ingredient("Liszt", "Általában búza örlemény, sok mindenhez jó.");
-
-            using (var context = new RecipeContext(
-                serviceProvider.GetRequiredService<
-                    DbContextOptions<RecipeContext>>()))
-            {
-                context.Recipes.Add(recipe1);
-                context.Recipes.Add(recipe2);
-                context.Ingredients.Add(ingredient1);
-                context.Ingredients.Add(ingredient2);
-                context.SaveChanges();
-            }
-        }
     }
 }
