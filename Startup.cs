@@ -14,6 +14,8 @@ using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Swagger;
 using Microsoft.OpenApi.Models;
 using Recipie.Data;
+using Microsoft.AspNetCore.Identity;
+using Recipie.Models;
 
 namespace Recipie
 {
@@ -36,6 +38,7 @@ namespace Recipie
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
             });
+            services.AddIdentity<User, IdentityRole>().AddEntityFrameworkStores<RecipeContext>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -51,6 +54,7 @@ namespace Recipie
             app.UseRouting();
 
             app.UseAuthorization();
+            app.UseAuthentication();
 
             app.UseEndpoints(endpoints =>
             {
