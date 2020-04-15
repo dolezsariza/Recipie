@@ -99,7 +99,7 @@ namespace Recipie.Controllers
         [HttpPost]
         public async Task<ActionResult<Recipe>> AddRecipe([FromBody] RecipePostRequest recipeInfo)
         {
-            var recipe = new Recipe(recipeInfo.Name, recipeInfo.Description);
+            var recipe = new Recipe(recipeInfo.Name, recipeInfo.Description, recipeInfo.OwnerId);
         
             _context.Recipes.Add(recipe);
 
