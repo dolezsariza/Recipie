@@ -7,7 +7,6 @@ namespace Recipie.RequestModels
 {
     public class IngredientPostRequest
     {
-        public string OwnerName { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
     }
