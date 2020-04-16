@@ -16,6 +16,9 @@ using Microsoft.OpenApi.Models;
 using Recipie.Data;
 using Microsoft.AspNetCore.Identity;
 using Recipie.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
+using Recipie.Extensions;
 
 namespace Recipie
 {
@@ -47,6 +50,18 @@ namespace Recipie
                 opt.Password.RequireUppercase = true;
             })
                 .AddEntityFrameworkStores<RecipeContext>().AddDefaultTokenProviders();
+
+            services.ConfigureApplicationCookie(options=>
+            {
+                options.Cookie.HttpOnly = true;
+                options.Cookie.Name = "credentials";
+                options.ExpireTimeSpan = TimeSpan.FromHours(24);
+                options.Cookie.Domain = "localhost";
+                options.LoginPath = "/login";
+                options.LogoutPath = "/logout";
+                options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
+                options.SlidingExpiration = true;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
