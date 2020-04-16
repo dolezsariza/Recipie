@@ -34,8 +34,18 @@ namespace Recipie
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy",
+                builder =>
+                {
+                    builder.WithOrigins("http://localhost:3000").AllowAnyMethod().AllowAnyHeader().AllowCredentials();
+                });
+            });
+            services.ConfigureIISIntegration();
+
             services.AddControllers();
-            services.AddDbContext<RecipeContext>(
+            services.AddDbContextPool<RecipeContext>(
                 options => options.UseSqlServer(Configuration.GetConnectionString("RecipeConnection")));
             services.AddSwaggerGen(c =>
             {
