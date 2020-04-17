@@ -25,6 +25,16 @@ namespace Recipie.Domain.Models
         public int Protein { get; set; }
         public int Salt { get; set; }
         public List<RecipeIngredient> RecipeIngredients { get; set; }
+
+        //[ForeignKey(nameof(Category))]
+        public int CategoryId { get; set; }
+        public Category Category { get; set; }
+        //[ForeignKey(nameof(SubCategory))]
+        public int SubCategoryId { get; set; }
+        public SubCategory SubCategory { get; set; }
+
+        public List<RecipeTag> RecipeTags { get; set; }
+        
         public DateTime Date { get; set; }
 
         public Recipe(string name, string description, string ownerId)
