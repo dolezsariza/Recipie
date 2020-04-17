@@ -1,10 +1,12 @@
 ﻿using Recipie.Models;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Recipie.Domain.Models
 {
     public class Ingredient
     {
+        [Key]
         public int ID { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
