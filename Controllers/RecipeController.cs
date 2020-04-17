@@ -122,5 +122,22 @@ namespace Recipie.Controllers
             return Ok();
         }
 
+        [HttpGet("{id}/tags")]
+        public async Task<ActionResult> GetTags(int id)
+        {
+            var tagIds = await _context.RecipeTags.Where(rt => rt.RecipeId == id).Select(rt => rt.TagId).ToListAsync();
+            if (tagIds == null)
+            {
+                return NotFound();
+            }
+            var tags = await _context.Tags.Where(t => tagIds.Contains(t.Id)).ToListAsync();
+
+            if(tags == null)
+            {
+                return NotFound();
+            }
+            return Ok(tags);
+        }
+
     }
 }
