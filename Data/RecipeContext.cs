@@ -22,6 +22,7 @@ namespace Recipie.Data
         public DbSet<Category> Categories { get; set; }
         public DbSet<SubCategory> SubCategories { get; set; }
         public DbSet<Tag> Tags { get; set; }
+        public DbSet<RecipeTag> RecipeTags { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
