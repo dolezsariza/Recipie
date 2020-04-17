@@ -24,7 +24,9 @@ namespace Recipie.Data
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<RecipeIngredient>()
-                .HasKey(s => new { s.IngredientId, s.RecipeId });
+                .HasKey(ri => new { ri.IngredientId, ri.RecipeId });
+            modelBuilder.Entity<RecipeTag>()
+                .HasKey(rt => new { rt.RecipeId, rt.TagId });
         }
     }
 }
