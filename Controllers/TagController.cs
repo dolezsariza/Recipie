@@ -49,7 +49,7 @@ namespace Recipie.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> ModifyTag(int id, [FromBody] Category modifiedTag)
+        public async Task<IActionResult> ModifyTag(int id, [FromBody] Tag modifiedTag)
         {
             if (UserAuthentication())
             {
@@ -76,7 +76,7 @@ namespace Recipie.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult<Category>> AddTag([FromBody] Category newTag)
+        public async Task<ActionResult<Tag>> AddTag([FromBody] Tag newTag)
         {
             var tag = new Tag(newTag.Name);
 
