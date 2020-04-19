@@ -8,6 +8,7 @@ using Recipie.Models;
 using Recipie.RequestModels;
 using Recipie.Data;
 using Recipie.Domain.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Recipie.Controllers
 {
@@ -66,35 +67,41 @@ namespace Recipie.Controllers
             return Ok(recipes);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> ModifyIngredient(int id, [FromBody]Ingredient modifiedIngredient)
         {
-            var ingredient = await _context.Ingredients.SingleOrDefaultAsync(ingredient => ingredient.ID == id);
-            if (ingredient == null)
+            if (UserAuthentication())
             {
-                return BadRequest();
-            }
+                var ingredient = await _context.Ingredients.SingleOrDefaultAsync(ingredient => ingredient.ID == id);
+                if (ingredient == null)
+                {
+                    return BadRequest();
+                }
 
-            ingredient.Name = modifiedIngredient.Name;
-            ingredient.Description = modifiedIngredient.Description;
-            ingredient.Energy = modifiedIngredient.Energy;
-            ingredient.Fat = modifiedIngredient.Fat;
-            ingredient.Carbohydrate = modifiedIngredient.Carbohydrate;
-            ingredient.Sugar = modifiedIngredient.Sugar;
-            ingredient.Protein = modifiedIngredient.Protein;
-            ingredient.Salt = modifiedIngredient.Salt;
+                ingredient.Name = modifiedIngredient.Name;
+                ingredient.Description = modifiedIngredient.Description;
+                ingredient.Energy = modifiedIngredient.Energy;
+                ingredient.Fat = modifiedIngredient.Fat;
+                ingredient.Carbohydrate = modifiedIngredient.Carbohydrate;
+                ingredient.Sugar = modifiedIngredient.Sugar;
+                ingredient.Protein = modifiedIngredient.Protein;
+                ingredient.Salt = modifiedIngredient.Salt;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-                return Ok();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    return Ok();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    return StatusCode(505);
+                }
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                return StatusCode(505);
-            }
+            return BadRequest("You don't have permissions for this action!");
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<Ingredient>> AddIngredient([FromBody] IngredientPostRequest ingredientInfo)
         {
@@ -106,19 +113,33 @@ namespace Recipie.Controllers
             return Created("New ingredient created", "");
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteIngredient(int id)
         {
-            var ingredient = await _context.Ingredients.FindAsync(id);
-            if (ingredient == null)
+            if (UserAuthentication())
             {
-                return NotFound();
+                var ingredient = await _context.Ingredients.FindAsync(id);
+                if (ingredient == null)
+                {
+                    return NotFound();
+                }
+
+                _context.Ingredients.Remove(ingredient);
+                await _context.SaveChangesAsync();
+
+                return Ok();
             }
+            return BadRequest("You don't have permissions for this action!");
+        }
 
-            _context.Ingredients.Remove(ingredient);
-            await _context.SaveChangesAsync();
+        private bool UserAuthentication()
+        {
+            var currentUserName = User.Identity.Name;
+            var user = _context.Users.Where(u => u.UserName == currentUserName).FirstOrDefault();
 
-            return Ok();
+            if (user.RoleName == "admin") return true;
+            return false;
         }
     }
 }
