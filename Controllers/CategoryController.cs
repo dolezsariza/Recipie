@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Recipie.Data;
 using Recipie.Models;
@@ -32,7 +33,6 @@ namespace Recipie.Controllers
             return NotFound();
         }
 
-
         [HttpGet("{id}")]
         public async Task<ActionResult> GetCategory(int id)
         {
@@ -46,53 +46,68 @@ namespace Recipie.Controllers
             return Ok(category);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> ModifyCategory(int id, [FromBody]Category modifiedCategory)
         {
-            var category = await _context.Categories.SingleOrDefaultAsync(cat => cat.Id == id);
-            if (category == null)
+            if (UserAuthentication())
             {
-                return BadRequest();
-            }
+                var category = await _context.Categories.SingleOrDefaultAsync(cat => cat.Id == id);
+                if (category == null)
+                {
+                    return BadRequest();
+                }
 
-            category.Name = modifiedCategory.Name;
-            category.Description = modifiedCategory.Description;
+                category.Name = modifiedCategory.Name;
+                category.Description = modifiedCategory.Description;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-                return Ok();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    return Ok();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    return StatusCode(505);
+                }
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                return StatusCode(505);
-            }
+            return BadRequest("You don't have permissions for this action!");
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<Category>> AddCategory([FromBody] Category newCategory)
         {
-            var category = new Category(newCategory.Name, newCategory.Description);
+            if (UserAuthentication())
+            {
+                var category = new Category(newCategory.Name, newCategory.Description);
 
-            _context.Categories.Add(category);
+                _context.Categories.Add(category);
 
-            await _context.SaveChangesAsync();
-            return Created("New category created", "");
+                await _context.SaveChangesAsync();
+                return Created("New category created", "");
+            }
+            return BadRequest("You don't have permissions for this action!");
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteCategory(int id)
         {
-            var category = await _context.Categories.FindAsync(id);
-            if (category == null)
+            if (UserAuthentication())
             {
-                return NotFound();
+                var category = await _context.Categories.FindAsync(id);
+                if (category == null)
+                {
+                    return NotFound();
+                }
+
+                _context.Categories.Remove(category);
+                await _context.SaveChangesAsync();
+
+                return Ok();
             }
-
-            _context.Categories.Remove(category);
-            await _context.SaveChangesAsync();
-
-            return Ok();
+            return BadRequest("You don't have permissions for this action!");
         }
 
         //Subcategory
@@ -122,53 +137,68 @@ namespace Recipie.Controllers
             return Ok(subcategory);
         }
 
+        [Authorize]
         [HttpPut("{id}/subcategories/{subId}")]
         public async Task<IActionResult> ModifySubCategory(int id, [FromBody]SubCategory modifiedSubCategory)
         {
-            var subcategory = await _context.SubCategories.SingleOrDefaultAsync(sub => sub.Id == id);
-            if (subcategory == null)
+            if (UserAuthentication())
             {
-                return BadRequest();
-            }
+                var subcategory = await _context.SubCategories.SingleOrDefaultAsync(sub => sub.Id == id);
+                if (subcategory == null)
+                {
+                    return BadRequest();
+                }
 
-            subcategory.Name = modifiedSubCategory.Name;
-            subcategory.Description = modifiedSubCategory.Description;
+                subcategory.Name = modifiedSubCategory.Name;
+                subcategory.Description = modifiedSubCategory.Description;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-                return Ok();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    return Ok();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    return StatusCode(505);
+                }
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                return StatusCode(505);
-            }
+            return BadRequest("You don't have permissions for this action!");
         }
 
+        [Authorize]
         [HttpPost("{id}/subcategories")]
         public async Task<ActionResult<Category>> AddSubCategory(int id, [FromBody] SubCategory newSubCategory)
         {
-            var subcategory = new SubCategory(newSubCategory.Name, newSubCategory.Description, id);
+            if (UserAuthentication())
+            {
+                var subcategory = new SubCategory(newSubCategory.Name, newSubCategory.Description, id);
 
-            _context.SubCategories.Add(subcategory);
+                _context.SubCategories.Add(subcategory);
 
-            await _context.SaveChangesAsync();
-            return Created("New subcategory created", "");
+                await _context.SaveChangesAsync();
+                return Created("New subcategory created", "");
+            }
+            return BadRequest("You don't have permissions for this action!");
         }
 
+        [Authorize]
         [HttpDelete("{id}/subcategories/{subId}")]
         public async Task<ActionResult> DeleteSubCategory(int id, int subId)
         {
-            var subcategory = await _context.SubCategories.FindAsync(subId);
-            if (subcategory == null)
+            if (UserAuthentication())
             {
-                return NotFound();
+                var subcategory = await _context.SubCategories.FindAsync(subId);
+                if (subcategory == null)
+                {
+                    return NotFound();
+                }
+
+                _context.SubCategories.Remove(subcategory);
+                await _context.SaveChangesAsync();
+
+                return Ok();
             }
-
-            _context.SubCategories.Remove(subcategory);
-            await _context.SaveChangesAsync();
-
-            return Ok();
+            return BadRequest("You don't have permissions for this action!");
         }
 
         // Get recipes by category
@@ -193,6 +223,15 @@ namespace Recipie.Controllers
                 return NotFound();
             }
             return Ok(recipes);
+        }
+
+        private bool UserAuthentication()
+        {
+            var currentUserName = User.Identity.Name;
+            var user = _context.Users.Where(u => u.UserName == currentUserName).FirstOrDefault();
+
+            if (user.RoleName == "admin") return true;
+            return false;
         }
     }
 }
