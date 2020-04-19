@@ -22,11 +22,9 @@ namespace Recipie.Controllers
             _context = context;
         }
 
-        [Authorize]
         [HttpGet("{userName}")]
         public async Task<IActionResult> GetProfile(string userName)
         {
-
             try
             {
                 var user = await _context.Users.SingleOrDefaultAsync(user => user.UserName == userName);
