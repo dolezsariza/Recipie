@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Recipie.Data;
 using Recipie.Models;
@@ -46,28 +47,34 @@ namespace Recipie.Controllers
             return Ok(tag);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> ModifyTag(int id, [FromBody] Category modifiedTag)
         {
-            var tag = await _context.Tags.SingleOrDefaultAsync(cat => cat.Id == id);
-            if (tag == null)
+            if (UserAuthentication())
             {
-                return BadRequest();
-            }
+                var tag = await _context.Tags.SingleOrDefaultAsync(cat => cat.Id == id);
+                if (tag == null)
+                {
+                    return BadRequest();
+                }
 
-            tag.Name = modifiedTag.Name;
+                tag.Name = modifiedTag.Name;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-                return Ok();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    return Ok();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    return StatusCode(505);
+                }
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                return StatusCode(505);
-            }
+            return BadRequest("You don't have permissions for this action!");
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<Category>> AddTag([FromBody] Category newTag)
         {
@@ -79,19 +86,24 @@ namespace Recipie.Controllers
             return Created("New tag created", "");
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteTag(int id)
         {
-            var tag = await _context.Tags.FindAsync(id);
-            if (tag == null)
+            if (UserAuthentication())
             {
-                return NotFound();
+                var tag = await _context.Tags.FindAsync(id);
+                if (tag == null)
+                {
+                    return NotFound();
+                }
+
+                _context.Tags.Remove(tag);
+                await _context.SaveChangesAsync();
+
+                return Ok();
             }
-
-            _context.Tags.Remove(tag);
-            await _context.SaveChangesAsync();
-
-            return Ok();
+            return BadRequest("You don't have permissions for this action!");
         }
 
         [HttpGet("{id}/recipes")]
@@ -105,6 +117,15 @@ namespace Recipie.Controllers
                 return NotFound();
             }
             return Ok(recipes);
+        }
+
+        private bool UserAuthentication()
+        {
+            var currentUserName = User.Identity.Name;
+            var user = _context.Users.Where(u => u.UserName == currentUserName).FirstOrDefault();
+
+            if (user.RoleName == "admin" ) return true;
+            return false;
         }
     }
 }
