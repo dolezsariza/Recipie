@@ -8,6 +8,7 @@ using Recipie.Models;
 using Recipie.RequestModels;
 using Recipie.Data;
 using Recipie.Domain.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Recipie.Controllers
 {
@@ -66,6 +67,7 @@ namespace Recipie.Controllers
             return Ok(ingredients);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> ModifyRecipe(int id, [FromBody]Recipe modifiedRecipe)
         {
@@ -73,6 +75,10 @@ namespace Recipie.Controllers
             if (recipe == null)
             {
                 return BadRequest();
+            }
+            if (!UserAuthentication(recipe))
+            {
+                return Unauthorized("You don't have permissions for this action!");
             }
 
             recipe.Name = modifiedRecipe.Name;
@@ -83,7 +89,6 @@ namespace Recipie.Controllers
             recipe.Sugar = modifiedRecipe.Sugar;
             recipe.Protein = modifiedRecipe.Protein;
             recipe.Salt = modifiedRecipe.Salt;
-
 
             try
             {
@@ -96,12 +101,14 @@ namespace Recipie.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<Recipe>> AddRecipe([FromBody] RecipePostRequest recipeInfo)
         {
             var recipe = new Recipe(recipeInfo.Name, recipeInfo.Description, recipeInfo.OwnerId);
             recipe.CategoryId = recipeInfo.CategoryId;
             recipe.SubCategoryId = recipeInfo.SubCategoryId;
+            recipe.OwnerName = recipeInfo.OwnerName;
         
             _context.Recipes.Add(recipe);
 
@@ -109,6 +116,7 @@ namespace Recipie.Controllers
             return Created("New recipe created", "");
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteRecipe(int id)
         {
@@ -116,6 +124,11 @@ namespace Recipie.Controllers
             if (recipe == null)
             {
                 return NotFound();
+            }
+
+            if (!UserAuthentication(recipe))
+            {
+                return Unauthorized("You don't have permissions for this action!");
             }
 
             _context.Recipes.Remove(recipe);
@@ -141,15 +154,33 @@ namespace Recipie.Controllers
             return Ok(tags);
         }
 
+        [Authorize]
         [HttpPost("{id}/addtag/{tagId}")]
         public async Task<ActionResult> AddTag(int id, int tagId)
         {
             var recipe = await _context.Recipes.FindAsync(id);
             var tag = await _context.Tags.FindAsync(tagId);
+            if (recipe == null || tag == null)
+            {
+                return NotFound();
+            }
+
+            if (!UserAuthentication(recipe))
+            {
+                return Unauthorized("You don't have permissions for this action!");
+            }
+
             recipe.Tags.Add(tag);
             await _context.SaveChangesAsync();
 
             return Created("New tag added", "");
+        }
+
+        private bool UserAuthentication(Recipe recipe)
+        {
+            var currentUserName = User.Identity.Name;
+            if (currentUserName == recipe.OwnerName) return true;
+            return false;
         }
     }
 }
