@@ -141,5 +141,15 @@ namespace Recipie.Controllers
             return Ok(tags);
         }
 
+        [HttpPost("{id}/addtag/{tagId}")]
+        public async Task<ActionResult> AddTag(int id, int tagId)
+        {
+            var recipe = await _context.Recipes.FindAsync(id);
+            var tag = await _context.Tags.FindAsync(tagId);
+            recipe.Tags.Add(tag);
+            await _context.SaveChangesAsync();
+
+            return Created("New tag added", "");
+        }
     }
 }
