@@ -16,6 +16,7 @@ namespace Recipie.Domain.Models
         public string Description { get; set; }
         [ForeignKey(nameof(User))]
         public string OwnerId { get; set; }
+        public string OwnerName { get; set; }
         [NotMappedAttribute]
         public List<Ingredient> Ingredients { get; set; }
         public int Energy { get; set; }
