@@ -16,5 +16,6 @@ namespace Recipie.Models
         public string ProfilePicture { get; set; }
         [NotMappedAttribute]
         public List<Recipe> Recipes { get; set; }
+        public string RoleName { get; set; }
     }
 }

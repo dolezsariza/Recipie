@@ -29,6 +29,7 @@ namespace Recipie.Controllers
         public async Task<IActionResult> Register(RegisterPostRequest registerRequest)
         {
             var user = new User { UserName = registerRequest.Username, Email = registerRequest.Email };
+            user.RoleName = "user";
 
             var result = await _userManager.CreateAsync(user, registerRequest.Password);
 
