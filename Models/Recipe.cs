@@ -34,6 +34,8 @@ namespace Recipie.Domain.Models
         public SubCategory SubCategory { get; set; }
 
         public List<RecipeTag> RecipeTags { get; set; }
+        [NotMapped]
+        public List<Tag> Tags { get; set; }
         
         public DateTime Date { get; set; }
 
