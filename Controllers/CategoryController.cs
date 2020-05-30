@@ -129,7 +129,7 @@ namespace Recipie.Controllers
         {
             var subcategory = await _context.SubCategories.FindAsync(subId);
 
-            if (subcategory == null)
+            if (subcategory == null || subcategory.CategoryId != id)
             {
                 return NotFound();
             }
