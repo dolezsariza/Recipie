@@ -215,9 +215,9 @@ namespace Recipie.Controllers
         }
 
         [HttpGet("{id}/subcategories/{subId}/recipes")]
-        public async Task<ActionResult> GetARecipeOfCategory(int id, int subId)
+        public async Task<ActionResult> GetRecipesOfSubcategory(int id, int subId)
         {
-            var recipes = await _context.Recipes.Where(rec => rec.SubCategoryId == subId).ToListAsync();
+            var recipes = await _context.Recipes.Where(rec => rec.SubCategoryId == subId && rec.CategoryId == id).ToListAsync();
             if (recipes == null)
             {
                 return NotFound();
