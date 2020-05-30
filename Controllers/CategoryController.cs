@@ -144,7 +144,7 @@ namespace Recipie.Controllers
             if (UserAuthentication())
             {
                 var subcategory = await _context.SubCategories.SingleOrDefaultAsync(sub => sub.Id == id);
-                if (subcategory == null)
+                if (subcategory == null || subcategory.CategoryId != id)
                 {
                     return BadRequest();
                 }
@@ -188,7 +188,7 @@ namespace Recipie.Controllers
             if (UserAuthentication())
             {
                 var subcategory = await _context.SubCategories.FindAsync(subId);
-                if (subcategory == null)
+                if (subcategory == null || subcategory.CategoryId != id)
                 {
                     return NotFound();
                 }
