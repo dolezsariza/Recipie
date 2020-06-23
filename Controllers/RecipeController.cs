@@ -106,9 +106,16 @@ namespace Recipie.Controllers
         public async Task<ActionResult<Recipe>> AddRecipe([FromBody] RecipePostRequest recipeInfo)
         {
             var recipe = new Recipe(recipeInfo.Name, recipeInfo.Description, recipeInfo.OwnerId);
-            recipe.CategoryId = recipeInfo.CategoryId;
-            recipe.SubCategoryId = recipeInfo.SubCategoryId;
+            recipe.CategoryId = int.Parse(recipeInfo.CategoryId);
+            recipe.SubCategoryId = int.Parse(recipeInfo.SubCategoryId);
             recipe.OwnerName = recipeInfo.OwnerName;
+            recipe.Date = recipeInfo.Date;
+            recipe.Carbohydrate = int.Parse(recipeInfo.Carbohydrate);
+            recipe.Energy = int.Parse(recipeInfo.Energy);
+            recipe.Fat = int.Parse(recipeInfo.Fat);
+            recipe.Protein = int.Parse(recipeInfo.Protein);
+            recipe.Salt = int.Parse(recipeInfo.Salt);
+            recipe.Sugar = int.Parse(recipeInfo.Sugar);
         
             _context.Recipes.Add(recipe);
 

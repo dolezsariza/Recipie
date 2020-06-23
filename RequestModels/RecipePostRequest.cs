@@ -11,7 +11,18 @@ namespace Recipie.RequestModels
         public string OwnerName { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public int CategoryId { get; set; }
-        public int SubCategoryId { get; set; }
+        public string CategoryId { get; set; }
+        public string SubCategoryId { get; set; }
+        public string Carbohydrate { get; set; }
+        public string Energy { get; set; }
+        public string Fat { get; set; }
+        public string Protein { get; set; }
+        public string Salt { get; set; }
+        public string Sugar { get; set; }
+        public DateTime Date { get; set; }
+        public RecipePostRequest()
+        {
+            Date = DateTime.Now;
+        }
     }
 }
