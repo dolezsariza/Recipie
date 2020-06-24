@@ -83,12 +83,12 @@ namespace Recipie.Controllers
 
             recipe.Name = modifiedRecipe.Name;
             recipe.Description = modifiedRecipe.Description;
-            recipe.Energy = modifiedRecipe.Energy;
-            recipe.Fat = modifiedRecipe.Fat;
-            recipe.Carbohydrate = modifiedRecipe.Carbohydrate;
-            recipe.Sugar = modifiedRecipe.Sugar;
-            recipe.Protein = modifiedRecipe.Protein;
-            recipe.Salt = modifiedRecipe.Salt;
+            recipe.Energy = int.Parse(modifiedRecipe.Energy);
+            recipe.Fat = float.Parse(modifiedRecipe.Fat);
+            recipe.Carbohydrate = float.Parse(modifiedRecipe.Carbohydrate);
+            recipe.Sugar = float.Parse(modifiedRecipe.Sugar);
+            recipe.Protein = float.Parse(modifiedRecipe.Protein);
+            recipe.Salt = float.Parse(modifiedRecipe.Salt);
 
             try
             {
@@ -105,17 +105,18 @@ namespace Recipie.Controllers
         [HttpPost]
         public async Task<ActionResult<Recipe>> AddRecipe([FromBody] RecipePostRequest recipeInfo)
         {
+            ReplaceDotsInRecipeInfo(recipeInfo);
             var recipe = new Recipe(recipeInfo.Name, recipeInfo.Description, recipeInfo.OwnerId);
             recipe.CategoryId = int.Parse(recipeInfo.CategoryId);
             recipe.SubCategoryId = int.Parse(recipeInfo.SubCategoryId);
             recipe.OwnerName = recipeInfo.OwnerName;
             recipe.Date = recipeInfo.Date;
-            recipe.Carbohydrate = int.Parse(recipeInfo.Carbohydrate);
+            recipe.Carbohydrate = float.Parse(recipeInfo.Carbohydrate);
             recipe.Energy = int.Parse(recipeInfo.Energy);
-            recipe.Fat = int.Parse(recipeInfo.Fat);
-            recipe.Protein = int.Parse(recipeInfo.Protein);
-            recipe.Salt = int.Parse(recipeInfo.Salt);
-            recipe.Sugar = int.Parse(recipeInfo.Sugar);
+            recipe.Fat = float.Parse(recipeInfo.Fat);
+            recipe.Protein = float.Parse(recipeInfo.Protein);
+            recipe.Salt = float.Parse(recipeInfo.Salt);
+            recipe.Sugar = float.Parse(recipeInfo.Sugar);
         
             _context.Recipes.Add(recipe);
 

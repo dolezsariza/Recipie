@@ -20,11 +20,11 @@ namespace Recipie.Domain.Models
         [NotMappedAttribute]
         public List<Ingredient> Ingredients { get; set; }
         public int Energy { get; set; }
-        public int Fat { get; set; }
-        public int Carbohydrate { get; set; }
-        public int Sugar { get; set; }
-        public int Protein { get; set; }
-        public int Salt { get; set; }
+        public float Fat { get; set; }
+        public float Carbohydrate { get; set; }
+        public float Sugar { get; set; }
+        public float Protein { get; set; }
+        public float Salt { get; set; }
         public List<RecipeIngredient> RecipeIngredients { get; set; }
 
         //[ForeignKey(nameof(Category))]
