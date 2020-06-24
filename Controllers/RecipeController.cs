@@ -71,7 +71,7 @@ namespace Recipie.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> ModifyRecipe(int id, [FromBody]Recipe modifiedRecipe)
+        public async Task<IActionResult> ModifyRecipe(int id, [FromBody]RecipePostRequest modifiedRecipe)
         {
             var recipe = await _context.Recipes.SingleOrDefaultAsync(recipe => recipe.ID == id);
             if (recipe == null)
@@ -82,6 +82,7 @@ namespace Recipie.Controllers
             {
                 return Unauthorized("You don't have permissions for this action!");
             }
+            ReplaceDotsInRecipeInfo(modifiedRecipe);
 
             recipe.Name = modifiedRecipe.Name;
             recipe.Description = modifiedRecipe.Description;
@@ -191,6 +192,15 @@ namespace Recipie.Controllers
             var currentUserName = User.Identity.Name;
             if (currentUserName == recipe.OwnerName) return true;
             return false;
+        }
+
+        private void ReplaceDotsInRecipeInfo(RecipePostRequest recipeInfo)
+        {
+            recipeInfo.Carbohydrate = recipeInfo.Carbohydrate.Replace(".", ",");
+            recipeInfo.Fat = recipeInfo.Fat.Replace(".", ",");
+            recipeInfo.Protein = recipeInfo.Protein.Replace(".", ",");
+            recipeInfo.Salt = recipeInfo.Salt.Replace(".", ",");
+            recipeInfo.Sugar = recipeInfo.Sugar.Replace(".", ",");
         }
     }
 }
