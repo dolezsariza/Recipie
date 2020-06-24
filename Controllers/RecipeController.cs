@@ -27,8 +27,10 @@ namespace Recipie.Controllers
         public async Task<ActionResult> GetAllRecipes()
         {
             var recipes = await _context.Recipes.ToListAsync();
+
             if (recipes != null)
             {
+                recipes.Sort((x, y) => x.Name.CompareTo(y.Name));
                 return Ok(recipes);
             }
 
