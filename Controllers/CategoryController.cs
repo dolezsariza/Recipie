@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Recipie.Data;
 using Recipie.Models;
+using Recipie.Repositories.CategoryRepository.Interfaces;
+using Recipie.Repositories.LoginRepository.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,17 +16,19 @@ namespace Recipie.Controllers
     [ApiController]
     public class CategoryController : ControllerBase
     {
-        private readonly RecipeContext _context;
+        private readonly ICategoryRepository _categoryRepository;
+        private readonly IAuthenticator _authenticator;
 
-        public CategoryController(RecipeContext context)
+        public CategoryController(ICategoryRepository categoryRepository, IAuthenticator authenticator)
         {
-            _context = context;
+            _categoryRepository = categoryRepository;
+            _authenticator = authenticator;            
         }
 
         [HttpGet]
         public async Task<ActionResult> GetAllCategories()
         {
-            var categories = await _context.Categories.ToListAsync();
+            var categories = await _categoryRepository.GetAllCategories();
             if (categories != null)
             {
                 return Ok(categories);
@@ -36,7 +40,7 @@ namespace Recipie.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult> GetCategory(int id)
         {
-            var category = await _context.Categories.FindAsync(id);
+            var category = await _categoryRepository.GetCategory(id);
 
             if (category == null)
             {
@@ -47,45 +51,30 @@ namespace Recipie.Controllers
         }
 
         [Authorize]
-        [HttpPut("{id}")]
-        public async Task<IActionResult> ModifyCategory(int id, [FromBody]Category modifiedCategory)
+        [HttpPost]
+        public async Task<ActionResult<Category>> AddCategory([FromBody] Category newCategory)
         {
-            if (UserAuthentication())
+            if (_authenticator.AuthenticateUser(User.Identity.Name))
             {
-                var category = await _context.Categories.SingleOrDefaultAsync(cat => cat.Id == id);
-                if (category == null)
-                {
-                    return BadRequest();
-                }
-
-                category.Name = modifiedCategory.Name;
-                category.Description = modifiedCategory.Description;
-
-                try
-                {
-                    await _context.SaveChangesAsync();
-                    return Ok();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    return StatusCode(505);
-                }
+                var category = await _categoryRepository.AddCategory(newCategory.Name, newCategory.Description);
+                if(category) return Created("New category created", "");
+                return BadRequest("Addition unsuccessful");
             }
             return BadRequest("You don't have permissions for this action!");
         }
 
         [Authorize]
-        [HttpPost]
-        public async Task<ActionResult<Category>> AddCategory([FromBody] Category newCategory)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> ModifyCategory(int id, [FromBody]Category modifiedCategory)
         {
-            if (UserAuthentication())
+            if (_authenticator.AuthenticateUser(User.Identity.Name))
             {
-                var category = new Category(newCategory.Name, newCategory.Description);
-
-                _context.Categories.Add(category);
-
-                await _context.SaveChangesAsync();
-                return Created("New category created", "");
+                var category = await _categoryRepository.ModifyCategory(id, modifiedCategory.Name, modifiedCategory.Description);
+                if (category)
+                {
+                    return Ok();
+                }
+                return NotFound();               
             }
             return BadRequest("You don't have permissions for this action!");
         }
@@ -94,20 +83,24 @@ namespace Recipie.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteCategory(int id)
         {
-            if (UserAuthentication())
+            if (_authenticator.AuthenticateUser(User.Identity.Name))
             {
-                var category = await _context.Categories.FindAsync(id);
-                if (category == null)
-                {
-                    return NotFound();
-                }
-
-                _context.Categories.Remove(category);
-                await _context.SaveChangesAsync();
-
-                return Ok();
+                var category = await _categoryRepository.DeleteCategory(id);
+                if (category) return Ok();
+                return BadRequest("Deletion unsuccessful");
             }
             return BadRequest("You don't have permissions for this action!");
+        }
+
+        [HttpGet("{id}/recipes")]
+        public async Task<ActionResult> GetRecipesOfCategory(int id)
+        {
+            var recipes = await _categoryRepository.GetRecipesOfCategory(id);
+            if (recipes == null)
+            {
+                return NotFound();
+            }
+            return Ok(recipes);
         }
 
         //Subcategory
@@ -115,7 +108,7 @@ namespace Recipie.Controllers
         [HttpGet("{id}/subcategories")]
         public async Task<ActionResult> GetSubsOfCategory(int id)
         {
-            var subcategories = await _context.SubCategories.Where(sub => sub.CategoryId == id).ToListAsync();
+            var subcategories = await _categoryRepository.GetSubCategories(id);
             if (subcategories == null)
             {
                 return NotFound();
@@ -127,9 +120,9 @@ namespace Recipie.Controllers
         [HttpGet("{id}/subcategories/{subId}")]
         public async Task<ActionResult> GetSubCategory(int id, int subId)
         {
-            var subcategory = await _context.SubCategories.FindAsync(subId);
+            var subcategory = await _categoryRepository.GetSubCategory(id, subId);
 
-            if (subcategory == null || subcategory.CategoryId != id)
+            if (subcategory == null)
             {
                 return NotFound();
             }
@@ -138,100 +131,55 @@ namespace Recipie.Controllers
         }
 
         [Authorize]
-        [HttpPut("{id}/subcategories/{subId}")]
-        public async Task<IActionResult> ModifySubCategory(int id, [FromBody]SubCategory modifiedSubCategory)
+        [HttpPost("{id}/subcategories")]
+        public async Task<ActionResult<Category>> AddSubCategory(int id, [FromBody] SubCategory newSubCategory)
         {
-            if (UserAuthentication())
+            if (_authenticator.AuthenticateUser(User.Identity.Name))
             {
-                var subcategory = await _context.SubCategories.SingleOrDefaultAsync(sub => sub.Id == id);
-                if (subcategory == null || subcategory.CategoryId != id)
-                {
-                    return BadRequest();
-                }
-
-                subcategory.Name = modifiedSubCategory.Name;
-                subcategory.Description = modifiedSubCategory.Description;
-
-                try
-                {
-                    await _context.SaveChangesAsync();
-                    return Ok();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    return StatusCode(505);
-                }
+                var subcategory = await _categoryRepository.AddSubCategory(id, newSubCategory.Name, newSubCategory.Description);
+                if(subcategory) return Created("New subcategory created", "");
+                return BadRequest("Addition unsuccessful");
             }
             return BadRequest("You don't have permissions for this action!");
         }
 
         [Authorize]
-        [HttpPost("{id}/subcategories")]
-        public async Task<ActionResult<Category>> AddSubCategory(int id, [FromBody] SubCategory newSubCategory)
+        [HttpPut("{id}/subcategories/{subId}")]
+        public async Task<IActionResult> ModifySubCategory(int id, [FromBody]SubCategory modifiedSubCategory)
         {
-            if (UserAuthentication())
+            if (_authenticator.AuthenticateUser(User.Identity.Name))
             {
-                var subcategory = new SubCategory(newSubCategory.Name, newSubCategory.Description, id);
-
-                _context.SubCategories.Add(subcategory);
-
-                await _context.SaveChangesAsync();
-                return Created("New subcategory created", "");
+                var subcategory = await _categoryRepository.ModifySubCategory(id, modifiedSubCategory.Id, modifiedSubCategory.Name, modifiedSubCategory.Description);
+                if(subcategory) return Ok();
+                return BadRequest("Modification unsuccessful");
+                
             }
             return BadRequest("You don't have permissions for this action!");
         }
+
 
         [Authorize]
         [HttpDelete("{id}/subcategories/{subId}")]
         public async Task<ActionResult> DeleteSubCategory(int id, int subId)
         {
-            if (UserAuthentication())
+            if (_authenticator.AuthenticateUser(User.Identity.Name))
             {
-                var subcategory = await _context.SubCategories.FindAsync(subId);
-                if (subcategory == null || subcategory.CategoryId != id)
-                {
-                    return NotFound();
-                }
-
-                _context.SubCategories.Remove(subcategory);
-                await _context.SaveChangesAsync();
-
-                return Ok();
+                var subcategory = await _categoryRepository.DeleteSubCategory(id, subId);
+                if (subcategory) return Ok();
+                return BadRequest("Deletion unsuccessful"); 
             }
             return BadRequest("You don't have permissions for this action!");
-        }
-
-        // Get recipes by category
-
-        [HttpGet("{id}/recipes")]
-        public async Task<ActionResult> GetRecipesOfCategory(int id)
-        {
-            var recipes = await _context.Recipes.Where(rec => rec.CategoryId == id).ToListAsync();
-            if (recipes == null)
-            {
-                return NotFound();
-            }
-            return Ok(recipes);
         }
 
         [HttpGet("{id}/subcategories/{subId}/recipes")]
         public async Task<ActionResult> GetRecipesOfSubcategory(int id, int subId)
         {
-            var recipes = await _context.Recipes.Where(rec => rec.SubCategoryId == subId && rec.CategoryId == id).ToListAsync();
+            var recipes = await _categoryRepository.GetRecipesOfSubCategory(id, subId);
             if (recipes == null)
             {
                 return NotFound();
             }
             return Ok(recipes);
-        }
-
-        private bool UserAuthentication()
-        {
-            var currentUserName = User.Identity.Name;
-            var user = _context.Users.Where(u => u.UserName == currentUserName).FirstOrDefault();
-
-            if (user.RoleName == "admin") return true;
-            return false;
         }
     }
 }
