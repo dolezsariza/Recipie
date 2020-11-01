@@ -18,6 +18,7 @@ namespace Recipie.Domain.Models
         public int Salt { get; set; }
         public List<RecipeIngredient> RecipeIngredients { get; set; }
 
+        public Ingredient() { }
         public Ingredient(string name, string description)
         {
             Name = name;
