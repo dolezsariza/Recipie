@@ -16,5 +16,6 @@ namespace Recipie.Models
         {
             Name = name;
         }
+        public Tag() { }
     }
 }

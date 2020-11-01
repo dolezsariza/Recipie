@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Recipie.Data;
 using Recipie.Models;
+using Recipie.Repositories.LoginRepository.Interfaces;
+using Recipie.Repositories.TagRepository.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,17 +16,19 @@ namespace Recipie.Controllers
     [ApiController]
     public class TagController : ControllerBase
     {
-        private readonly RecipeContext _context;
+        private readonly ITagRepository _tagRepository;
+        private readonly IAuthenticator _authenticator;
 
-        public TagController(RecipeContext context)
+        public TagController(ITagRepository tagRepository, IAuthenticator authenticator)
         {
-            _context = context;
+            _tagRepository = tagRepository;
+            _authenticator = authenticator;
         }
 
         [HttpGet]
         public async Task<ActionResult> GetAllTags()
         {
-            var tags = await _context.Tags.ToListAsync();
+            var tags = await _tagRepository.GetAllTags();
             if (tags != null)
             {
                 return Ok(tags);
@@ -37,7 +41,7 @@ namespace Recipie.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult> GetTag(int id)
         {
-            var tag = await _context.Tags.FindAsync(id);
+            var tag = await _tagRepository.GetTag(id);
 
             if (tag == null)
             {
@@ -51,25 +55,11 @@ namespace Recipie.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> ModifyTag(int id, [FromBody] Tag modifiedTag)
         {
-            if (UserAuthentication())
+            if (_authenticator.AuthenticateUser(User.Identity.Name))
             {
-                var tag = await _context.Tags.SingleOrDefaultAsync(cat => cat.Id == id);
-                if (tag == null)
-                {
-                    return BadRequest();
-                }
-
-                tag.Name = modifiedTag.Name;
-
-                try
-                {
-                    await _context.SaveChangesAsync();
-                    return Ok();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    return StatusCode(505);
-                }
+                var result = await _tagRepository.ModifyTag(id, modifiedTag);
+                if (result) return Ok();
+                else return NotFound();
             }
             return BadRequest("You don't have permissions for this action!");
         }
@@ -78,30 +68,20 @@ namespace Recipie.Controllers
         [HttpPost]
         public async Task<ActionResult<Tag>> AddTag([FromBody] Tag newTag)
         {
-            var tag = new Tag(newTag.Name);
-
-            _context.Tags.Add(tag);
-
-            await _context.SaveChangesAsync();
-            return Created("New tag created", "");
+            var result = await _tagRepository.AddTag(newTag);
+            if (result) return Created("New tag created", "");
+            return BadRequest("Addition unsuccessful");
         }
 
         [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteTag(int id)
         {
-            if (UserAuthentication())
+            if (_authenticator.AuthenticateUser(User.Identity.Name))
             {
-                var tag = await _context.Tags.FindAsync(id);
-                if (tag == null)
-                {
-                    return NotFound();
-                }
-
-                _context.Tags.Remove(tag);
-                await _context.SaveChangesAsync();
-
-                return Ok();
+                var result = await _tagRepository.DeleteTag(id);
+                if(result) return Ok();
+                return BadRequest("Deletion unsuccessful");
             }
             return BadRequest("You don't have permissions for this action!");
         }
@@ -109,23 +89,12 @@ namespace Recipie.Controllers
         [HttpGet("{id}/recipes")]
         public async Task<ActionResult> GetRecipesInTag(int id)
         {
-            var recipeIds = await _context.RecipeTags.Where(rt => rt.TagId == id).Select(rt => rt.RecipeId).ToListAsync();
-            var recipes = await _context.Recipes.Where(rec => recipeIds.Contains(rec.ID)).ToListAsync();
-
+            var recipes = await _tagRepository.GetRecipesInTag(id);
             if (recipes == null)
             {
                 return NotFound();
             }
             return Ok(recipes);
-        }
-
-        private bool UserAuthentication()
-        {
-            var currentUserName = User.Identity.Name;
-            var user = _context.Users.Where(u => u.UserName == currentUserName).FirstOrDefault();
-
-            if (user.RoleName == "admin" ) return true;
-            return false;
         }
     }
 }
