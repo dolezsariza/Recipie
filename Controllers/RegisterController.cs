@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Recipie.Data;
 using Recipie.Models;
+using Recipie.Repositories.RegisterRepository.Interfaces;
 using Recipie.RequestModels;
 
 namespace Recipie.Controllers
@@ -17,31 +18,21 @@ namespace Recipie.Controllers
     [ApiController]
     public class RegisterController : ControllerBase
     {
-        private readonly RecipeContext _context;
-
-        private readonly UserManager<User> _userManager;
-        public RegisterController(UserManager<User> userManager, RecipeContext context)
+        private readonly IRegisterRepository _registerRepository;
+        public RegisterController(IRegisterRepository registerRepository)
         {
-            _context = context;
-            _userManager = userManager;
+            _registerRepository = registerRepository;
         }
         [HttpPost]
         public async Task<IActionResult> Register(RegisterPostRequest registerRequest)
         {
-            var user = new User { UserName = registerRequest.Username, Email = registerRequest.Email };
-            user.RoleName = "user";
+            var user = await _registerRepository.Register(registerRequest);
 
-            var result = await _userManager.CreateAsync(user, registerRequest.Password);
-
-
-
-            if (result.Succeeded)
+            if (user != null)
             {
-                await _userManager.AddClaimAsync(user, new Claim(ClaimTypes.Email, user.Email));
                 return Created("", user);
             }
-
-            return StatusCode(406, string.Join("\n", result.Errors.Select(x => x.Description)));
+            return BadRequest();
         }
     }
 }
