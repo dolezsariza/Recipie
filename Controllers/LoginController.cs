@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Identity;
 using System.Net;
 using System.Security.Claims;
 using Recipie.Data;
+using Recipie.Repositories.LoginRepository.Interfaces;
 
 namespace StudyStud.Controllers
 {
@@ -17,34 +18,25 @@ namespace StudyStud.Controllers
     [ApiController]
     public class LoginController : ControllerBase
     {
-        private readonly RecipeContext _context;
-        private readonly UserManager<User> _userManager;
-        private readonly SignInManager<User> _signInManager;
+        private readonly ILoginRepository _loginRepository;
 
-        public LoginController(RecipeContext context, UserManager<User> userManager, SignInManager<User> signInManager)
+        public LoginController(ILoginRepository loginRepository)
         {
-            _userManager = userManager;
-            _context = context;
-            _signInManager = signInManager;
+            _loginRepository = loginRepository;
         }
 
         [HttpPost]
         public async Task<IActionResult> Login(LoginPostRequest login)
         {
-            var user = await _userManager.FindByNameAsync(login.Username);
+            var user = await _loginRepository.Login(login);
             if (user == null)
             {
                 return BadRequest("Wrong username or password");
+            } 
+            else
+            { 
+                 return Ok(new[] { user.Id, user.UserName, user.Email });
             }
-            var result = await _userManager.CheckPasswordAsync(
-                user, login.Password);
-
-            if (result)
-            {
-                await _signInManager.SignInAsync(user, isPersistent: true);
-                return Ok(new[] { user.Id, user.UserName, user.Email });
-            }
-            return BadRequest("Wrong username or password");
         }
     }
 }
