@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using Recipie.Data;
 using Recipie.Domain.Models;
 using Recipie.Models;
+using Recipie.Repositories.LoginRepository.Interfaces;
+using Recipie.Repositories.UserRepository.Interfaces;
 
 namespace Recipie.Controllers
 {
@@ -15,114 +17,58 @@ namespace Recipie.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly RecipeContext _context;
+        private readonly IUserRepository _userRepository;
+        private readonly IAuthenticator _authenticator;
 
-        public UserController(RecipeContext context)
+        public UserController(IUserRepository userRepository, IAuthenticator authenticator)
         {
-            _context = context;
+            _userRepository = userRepository;
+            _authenticator = authenticator;
         }
 
         [HttpGet("{userName}")]
         public async Task<IActionResult> GetProfile(string userName)
         {
-            try
-            {
-                var user = await _context.Users.SingleOrDefaultAsync(user => user.UserName == userName);
-                Profile profile = new Profile()
-                {
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    Introduction = user.Introduction,
-                };
-                return Ok(profile);
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
+            var profile = await _userRepository.GetProfile(userName);
+            if(profile != null) return Ok(profile);
+            else return NotFound();
+            
         }
 
         [Authorize]
         [HttpPut("{userName}")]
         public async Task<IActionResult> UpdateProfile(string userName, [FromBody]Profile profile)
         {
-            if (!UserAuthentication(userName))
+            if (!_authenticator.CheckIfUserIsOwnerOfProfile(userName,User.Identity.Name))
             {
                 return BadRequest("You don't have permissions for this action!");
             }
-            try
-            {
-                var nuser = await _context.Users.SingleOrDefaultAsync(user => user.UserName == userName);
-
-                nuser.FirstName = profile.FirstName;
-                nuser.LastName = profile.LastName;
-                nuser.Introduction = profile.Introduction;
-                await _context.SaveChangesAsync();
-                return Ok();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.StackTrace);
-                return NotFound();
-            }
-
+            var result = await _userRepository.UpdateProfile(userName, profile);
+            if (result) return Ok();
+            else return NotFound();
         }
 
         [Authorize]
         [HttpDelete("{userName}")]
         public async Task<IActionResult> DeleteProfile(string userName)
         {
-            if (!UserAuthentication(userName))
+            if (!_authenticator.CheckIfUserIsOwnerOfProfile(userName, User.Identity.Name))
             {
-                return Unauthorized("You don't have permissions for this action!");
+                return BadRequest("You don't have permissions for this action!");
             }
-            try
-            {
-                User user = await _context.Users.SingleOrDefaultAsync(user => user.UserName == userName);
-                List<Recipe> recipesOfUser = await _context.Recipes.Where(topic => topic.OwnerId == user.Id).ToListAsync();
-
-                if (recipesOfUser != null)
-                {
-                    foreach (Recipe recipe in recipesOfUser)
-                    {
-                        recipe.OwnerId = null;
-                    }
-                }
-
-                _context.Users.Remove(user);
-                await _context.SaveChangesAsync();
-                return NoContent();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.StackTrace);
-                return BadRequest("User not found");
-            }
+            var result = await _userRepository.DeleteProfile(userName);
+            if (result) return NoContent();
+            else return NotFound();
+            
         }
 
         [Authorize]
         [HttpGet("{userName}/recipes")]
         public async Task<IActionResult> ListUsersRecipes(string userName)
         {
-            try
-            {
-                User user = await _context.Users.SingleOrDefaultAsync(user => user.UserName == userName);
-                List<Recipe> recipesOfUser = await _context.Recipes.Where(rec => rec.OwnerId == user.Id).ToListAsync();
-
-                return Ok(recipesOfUser);
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
+            var result = await _userRepository.ListUsersRecipes(userName);
+            return Ok(result);
+            
         }
-
-        private bool UserAuthentication(string username)
-        {
-            var currentUserName = User.Identity.Name;
-            if (currentUserName == username) return true;
-            return false;
-        }
-
     }
 }

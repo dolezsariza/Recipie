@@ -10,5 +10,5 @@ namespace Recipie.Repositories.LoginRepository.Interfaces
     {
         bool AuthenticateUser(string userName);
         bool CheckIfUserIsOwnerOfRecipe(string userName, int recipeId);
-    }
+        bool CheckIfUserIsOwnerOfProfile(string userName, string currentUser);    }
 }

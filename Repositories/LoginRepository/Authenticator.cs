@@ -26,5 +26,10 @@ namespace Recipie.Repositories.LoginRepository
             var recipe = _context.Recipes.Where(rec => rec.ID == recipeId).FirstOrDefault();
             return (recipe.OwnerName == userName);
         }
+
+        public bool CheckIfUserIsOwnerOfProfile(string userName, string currentUser)
+        {
+            return (userName == currentUser);
+        }
     }
 }

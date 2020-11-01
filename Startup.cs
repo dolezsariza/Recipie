@@ -29,6 +29,8 @@ using Recipie.Repositories.RegisterRepository.Interfaces;
 using Recipie.Repositories.RegisterRepository;
 using Recipie.Repositories.IngredientRepository.Interfaces;
 using Recipie.Repositories.IngredientRepository;
+using Recipie.Repositories.UserRepository.Interfaces;
+using Recipie.Repositories.UserRepository;
 
 namespace Recipie
 {
@@ -89,6 +91,7 @@ namespace Recipie
             services.AddScoped<ILogoutRepository, LogoutRepository>();
             services.AddScoped<IRegisterRepository, RegisterRepository>();
             services.AddScoped<IIngredientRepository, IngredientRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
