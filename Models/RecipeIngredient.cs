@@ -12,5 +12,6 @@ namespace Recipie.Models
         public int RecipeId { get; set; }
         public Ingredient Ingredient { get; set; }
         public int IngredientId { get; set; }
+        public float Amount { get; set; }
     }
 }
