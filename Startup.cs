@@ -19,6 +19,10 @@ using Recipie.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Recipie.Extensions;
+using Recipie.Repositories.CategoryRepository.Interfaces;
+using Recipie.Repositories.CategoryRepository;
+using Recipie.Repositories.LoginRepository.Interfaces;
+using Recipie.Repositories.LoginRepository;
 
 namespace Recipie
 {
@@ -72,6 +76,9 @@ namespace Recipie
                 options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
                 options.SlidingExpiration = true;
             });
+
+            services.AddScoped<ICategoryRepository, CategoryRepository>();
+            services.AddScoped<IAuthenticator, Authenticator>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
