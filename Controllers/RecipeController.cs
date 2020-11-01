@@ -9,6 +9,8 @@ using Recipie.RequestModels;
 using Recipie.Data;
 using Recipie.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
+using Recipie.Repositories.RecipeRepository.Interfaces;
+using Recipie.Repositories.LoginRepository.Interfaces;
 
 namespace Recipie.Controllers
 {
@@ -16,21 +18,22 @@ namespace Recipie.Controllers
     [ApiController]
     public class RecipeController : ControllerBase
     {
-        private readonly RecipeContext _context;
+        private readonly IRecipeRepository _recipeRepository;
+        private readonly IAuthenticator _authenticator;
 
-        public RecipeController(RecipeContext context)
+        public RecipeController(IRecipeRepository recipeRepository, IAuthenticator authenticator)
         {
-            _context = context;
+            _authenticator = authenticator;
+            _recipeRepository = recipeRepository;
         }
 
         [HttpGet]
         public async Task<ActionResult> GetAllRecipes()
         {
-            var recipes = await _context.Recipes.ToListAsync();
+            var recipes = await _recipeRepository.GetAllRecipes();
 
             if (recipes != null)
             {
-                recipes.Sort((x, y) => x.Name.CompareTo(y.Name));
                 return Ok(recipes);
             }
 
@@ -41,7 +44,7 @@ namespace Recipie.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult> GetRecipe(int id)
         {
-            var recipe = await _context.Recipes.FindAsync(id);
+            var recipe = await _recipeRepository.GetRecipe(id);
 
             if (recipe == null)
             {
@@ -54,18 +57,8 @@ namespace Recipie.Controllers
         [HttpGet("{id}/ingredients")]
         public async Task<ActionResult> GetIngredientsOfRecipe(int id)
         {
-            var ingredientIds = await _context.RecipeIngredients.Where(ri => ri.RecipeId == id).Select(ri => ri.IngredientId).ToListAsync();
-            if (ingredientIds == null)
-            {
-                return NotFound();
-            }
-            
-            var ingredients = await _context.Ingredients.Where(i => ingredientIds.Contains(i.ID)).ToListAsync();
-            if (ingredients == null)
-            {
-                return NotFound();
-            }
-
+            var ingredients = await _recipeRepository.GetIngredientsOfRecipe(id);
+            if (ingredients == null) return NotFound();
             return Ok(ingredients);
         }
 
@@ -73,91 +66,48 @@ namespace Recipie.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> ModifyRecipe(int id, [FromBody]RecipePostRequest modifiedRecipe)
         {
-            var recipe = await _context.Recipes.SingleOrDefaultAsync(recipe => recipe.ID == id);
-            if (recipe == null)
-            {
-                return BadRequest();
-            }
-            if (!UserAuthentication(recipe))
+            if (!_authenticator.CheckIfUserIsOwnerOfRecipe(User.Identity.Name, id))
             {
                 return Unauthorized("You don't have permissions for this action!");
             }
-            ReplaceDotsInRecipeInfo(modifiedRecipe);
 
-            recipe.Name = modifiedRecipe.Name;
-            recipe.Description = modifiedRecipe.Description;
-            recipe.Energy = int.Parse(modifiedRecipe.Energy);
-            recipe.Fat = float.Parse(modifiedRecipe.Fat);
-            recipe.Carbohydrate = float.Parse(modifiedRecipe.Carbohydrate);
-            recipe.Sugar = float.Parse(modifiedRecipe.Sugar);
-            recipe.Protein = float.Parse(modifiedRecipe.Protein);
-            recipe.Salt = float.Parse(modifiedRecipe.Salt);
-
-            try
+            var result = await _recipeRepository.ModifyRecipe(id, modifiedRecipe);
+            if (!result)
             {
-                await _context.SaveChangesAsync();
-                return Ok();
+                return BadRequest("Modification unsusccessful");
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                return StatusCode(505);
-            }
+            
+            return Ok();
+            
         }
 
         [Authorize]
         [HttpPost]
         public async Task<ActionResult<Recipe>> AddRecipe([FromBody] RecipePostRequest recipeInfo)
         {
-            ReplaceDotsInRecipeInfo(recipeInfo);
-            var recipe = new Recipe(recipeInfo.Name, recipeInfo.Description, recipeInfo.OwnerId);
-            recipe.CategoryId = int.Parse(recipeInfo.CategoryId);
-            recipe.SubCategoryId = int.Parse(recipeInfo.SubCategoryId);
-            recipe.OwnerName = recipeInfo.OwnerName;
-            recipe.Date = recipeInfo.Date;
-            recipe.Carbohydrate = float.Parse(recipeInfo.Carbohydrate);
-            recipe.Energy = int.Parse(recipeInfo.Energy);
-            recipe.Fat = float.Parse(recipeInfo.Fat);
-            recipe.Protein = float.Parse(recipeInfo.Protein);
-            recipe.Salt = float.Parse(recipeInfo.Salt);
-            recipe.Sugar = float.Parse(recipeInfo.Sugar);
-        
-            _context.Recipes.Add(recipe);
-
-            await _context.SaveChangesAsync();
-            return Created("New recipe created", "");
+            var result = await _recipeRepository.AddRecipe(recipeInfo);
+            if (result) return Created("New recipe added", "");
+            return BadRequest("Addition unsuccessful");
         }
 
         [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteRecipe(int id)
         {
-            var recipe = await _context.Recipes.FindAsync(id);
-            if (recipe == null)
-            {
-                return NotFound();
-            }
-
-            if (!UserAuthentication(recipe))
+            if (!_authenticator.CheckIfUserIsOwnerOfRecipe(User.Identity.Name, id))
             {
                 return Unauthorized("You don't have permissions for this action!");
             }
 
-            _context.Recipes.Remove(recipe);
-            await _context.SaveChangesAsync();
-
-            return Ok();
+            var result = await _recipeRepository.DeleteRecipe(id);
+            if (result) return Ok();
+            return BadRequest("Deletion unsuccessful");
         }
 
         [HttpGet("{id}/tags")]
         public async Task<ActionResult> GetTags(int id)
         {
-            var tagIds = await _context.RecipeTags.Where(rt => rt.RecipeId == id).Select(rt => rt.TagId).ToListAsync();
-            if (tagIds == null)
-            {
-                return NotFound();
-            }
-            var tags = await _context.Tags.Where(t => tagIds.Contains(t.Id)).ToListAsync();
-
+            var tags = await _recipeRepository.GetTags(id);
             if(tags == null)
             {
                 return NotFound();
@@ -169,38 +119,9 @@ namespace Recipie.Controllers
         [HttpPost("{id}/addtag/{tagId}")]
         public async Task<ActionResult> AddTag(int id, int tagId)
         {
-            var recipe = await _context.Recipes.FindAsync(id);
-            var tag = await _context.Tags.FindAsync(tagId);
-            if (recipe == null || tag == null)
-            {
-                return NotFound();
-            }
-
-            if (!UserAuthentication(recipe))
-            {
-                return Unauthorized("You don't have permissions for this action!");
-            }
-
-            recipe.Tags.Add(tag);
-            await _context.SaveChangesAsync();
-
-            return Created("New tag added", "");
-        }
-
-        private bool UserAuthentication(Recipe recipe)
-        {
-            var currentUserName = User.Identity.Name;
-            if (currentUserName == recipe.OwnerName) return true;
-            return false;
-        }
-
-        private void ReplaceDotsInRecipeInfo(RecipePostRequest recipeInfo)
-        {
-            recipeInfo.Carbohydrate = recipeInfo.Carbohydrate.Replace(".", ",");
-            recipeInfo.Fat = recipeInfo.Fat.Replace(".", ",");
-            recipeInfo.Protein = recipeInfo.Protein.Replace(".", ",");
-            recipeInfo.Salt = recipeInfo.Salt.Replace(".", ",");
-            recipeInfo.Sugar = recipeInfo.Sugar.Replace(".", ",");
+            var result = await _recipeRepository.AddTag(id, tagId);
+            if(result) return Created("New tag added", "");
+            return BadRequest("Tag couldn't be added");
         }
     }
 }
