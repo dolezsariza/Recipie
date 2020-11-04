@@ -119,6 +119,11 @@ namespace Recipie.Controllers
         [HttpPost("{id}/addtag/{tagId}")]
         public async Task<ActionResult> AddTag(int id, int tagId)
         {
+            if (!_authenticator.CheckIfUserIsOwnerOfRecipe(User.Identity.Name, id))
+            {
+                return Unauthorized("You don't have permissions for this action!");
+            }
+
             var result = await _recipeRepository.AddTag(id, tagId);
             if(result) return Created("New tag added", "");
             return BadRequest("Tag couldn't be added");
