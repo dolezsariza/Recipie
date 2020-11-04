@@ -29,8 +29,13 @@ namespace Recipie.Repositories.LoginRepository
                 var user = await _userManager.FindByNameAsync(login.Username);
                 var result = await _userManager.CheckPasswordAsync(
                     user, login.Password);
-                await _signInManager.SignInAsync(user, isPersistent: true);
-                return user;
+                if(result)
+                {
+                    await _signInManager.SignInAsync(user, isPersistent: true);
+                    return user;
+
+                }
+                return null;
             } 
             catch (Exception e)
             {
