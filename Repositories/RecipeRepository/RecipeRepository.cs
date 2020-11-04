@@ -65,17 +65,19 @@ namespace Recipie.Repositories.RecipeRepository
             try
             {
                 ReplaceDotsInRecipeInfo(recipeInfo);
-                var recipe = new Recipe(recipeInfo.Name, recipeInfo.Description, recipeInfo.OwnerId);
-                recipe.CategoryId = int.Parse(recipeInfo.CategoryId);
-                recipe.SubCategoryId = int.Parse(recipeInfo.SubCategoryId);
-                recipe.OwnerName = recipeInfo.OwnerName;
-                recipe.Date = recipeInfo.Date;
-                recipe.Carbohydrate = float.Parse(recipeInfo.Carbohydrate);
-                recipe.Energy = int.Parse(recipeInfo.Energy);
-                recipe.Fat = float.Parse(recipeInfo.Fat);
-                recipe.Protein = float.Parse(recipeInfo.Protein);
-                recipe.Salt = float.Parse(recipeInfo.Salt);
-                recipe.Sugar = float.Parse(recipeInfo.Sugar);
+                var recipe = new Recipe(recipeInfo.Name, recipeInfo.Description, recipeInfo.OwnerId)
+                {
+                    CategoryId = int.Parse(recipeInfo.CategoryId),
+                    SubCategoryId = int.Parse(recipeInfo.SubCategoryId),
+                    OwnerName = recipeInfo.OwnerName,
+                    Date = recipeInfo.Date,
+                    Carbohydrate = float.Parse(recipeInfo.Carbohydrate),
+                    Energy = int.Parse(recipeInfo.Energy),
+                    Fat = float.Parse(recipeInfo.Fat),
+                    Protein = float.Parse(recipeInfo.Protein),
+                    Salt = float.Parse(recipeInfo.Salt),
+                    Sugar = float.Parse(recipeInfo.Sugar)
+                };
 
                 _context.Recipes.Add(recipe);
 
