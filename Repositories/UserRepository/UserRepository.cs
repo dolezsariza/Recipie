@@ -28,6 +28,7 @@ namespace Recipie.Repositories.UserRepository
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Introduction = user.Introduction,
+                    ProfilePicture = user.ProfilePicture
                 };
                 return profile;
             } 
